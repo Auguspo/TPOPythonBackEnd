@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -11,67 +12,76 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
-class Canal(db.Model):
+class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
-    numero = db.Column(db.Integer)
-    emisora = db.Column(db.String(100))
+    descripcion = db.Column(db.String(300))
     imagen = db.Column(db.String(400))
+    link = db.Column(db.String(200))
+    fecha_horario = db.Column(db.DateTime)  # Cambiado a DateTime
 
-    def __init__(self, nombre, numero, emisora, imagen):
+    def __init__(self, nombre, descripcion, imagen, link, fecha_horario):
         self.nombre = nombre
-        self.numero = numero
-        self.emisora = emisora
+        self.descripcion = descripcion
         self.imagen = imagen
+        self.link = link
+        self.fecha_horario = fecha_horario
 
 with app.app_context():
     db.create_all()
 
-class CanalSchema(ma.Schema):
+class EventSchema(ma.Schema):
     class Meta:
-        fields = ("id", "nombre", "numero", "emisora", "imagen")
+        fields = ("id", "nombre", "descripcion", "imagen", "link", "fecha_horario")
 
-canal_schema = CanalSchema()
-canales_schema = CanalSchema(many=True)
+event_schema = EventSchema()
+events_schema = EventSchema(many=True)
 
-@app.route("/canales", methods=["GET"])
-def get_canales():
-    all_canales = Canal.query.all()
-    result = canales_schema.dump(all_canales)
+@app.route("/events", methods=["GET"])
+def get_events():
+    all_events = Event.query.all()
+    result = events_schema.dump(all_events)
     return jsonify(result)
 
-@app.route("/canales/<id>", methods=["GET"])
-def get_canal(id):
-    canal = Canal.query.get(id)
-    return canal_schema.jsonify(canal)
+@app.route("/events/<id>", methods=["GET"])
+def get_event(id):
+    event = Event.query.get(id)
+    return event_schema.jsonify(event)
 
-@app.route("/canales/<id>", methods=["DELETE"])
-def delete_canal(id):
-    canal = Canal.query.get(id)
-    db.session.delete(canal)
+@app.route("/events/<id>", methods=["DELETE"])
+def delete_event(id):
+    event = Event.query.get(id)
+    db.session.delete(event)
     db.session.commit()
-    return canal_schema.jsonify(canal)
+    return event_schema.jsonify(event)
 
-@app.route("/canales", methods=["POST"])
-def create_canal():
+@app.route("/events", methods=["POST"])
+def create_event():
     nombre = request.json["nombre"]
-    numero = request.json["numero"]
-    emisora = request.json["emisora"]
+    descripcion = request.json["descripcion"]
     imagen = request.json["imagen"]
-    new_canal = Canal(nombre, numero, emisora, imagen)
-    db.session.add(new_canal)
-    db.session.commit()
-    return canal_schema.jsonify(new_canal)
+    link = request.json["link"]
+    fecha_horario_str = request.json["fecha_horario"]
 
-@app.route("/canales/<id>", methods=["PUT"])
-def update_canal(id):
-    canal = Canal.query.get(id)
-    canal.nombre = request.json["nombre"]
-    canal.numero = request.json["numero"]
-    canal.emisora = request.json["emisora"]
-    canal.imagen = request.json["imagen"]
+    # Parsea la cadena de fecha y hora a un objeto DateTime
+    fecha_horario = datetime.strptime(fecha_horario_str, "%d/%m/%Y %H:%M")
+
+    new_event = Event(nombre, descripcion, imagen, link, fecha_horario)
+    db.session.add(new_event)
     db.session.commit()
-    return canal_schema.jsonify(canal)
+    return event_schema.jsonify(new_event)
+
+@app.route("/events/<id>", methods=["PUT"])
+def update_event(id):
+    event = Event.query.get(id)
+    event.nombre = request.json["nombre"]
+    event.descripcion = request.json["descripcion"]
+    event.imagen = request.json["imagen"]
+    event.link = request.json["link"]
+    event.fecha_horario = datetime.strptime(request.json["fecha_horario"], "%d/%m/%Y %H:%M")
+
+    db.session.commit()
+    return event_schema.jsonify(event)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
