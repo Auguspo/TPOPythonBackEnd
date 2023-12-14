@@ -6,10 +6,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from requests.exceptions import RequestException
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://Multitude6788:6y22ayv9y6h7yc@Multitude6788.mysql.pythonanywhere-services.com/Multitude6788$proyecto"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost/proyecto"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
